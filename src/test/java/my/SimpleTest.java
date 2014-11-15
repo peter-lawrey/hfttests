@@ -21,37 +21,31 @@ public class SimpleTest {
     }
 
     private static void option2() throws IOException {
-      Path file = getFile();
-      Files.deleteIfExists(file);
-//      int entries = 10_000_000;  // works
-      int entries = 30_000_000;
-      ChronicleMapBuilder<Long, SimpleBean> builder = ChronicleMapBuilder.of(Long.class, SimpleBean.class).
-          valueSize(56).entries(entries);
-      ChronicleMap<Long, SimpleBean> map = null;
-      try {
-        map = builder.createPersistedTo(file.toFile());
-        long count = entries - 5;
-//        for (long i = 0; i < count; i++) {
-//          map.put(i, new SimpleBean(i));
-//        }
-//        System.gc();
-//        for (long i = count; i < 2* count; i++) {
-//          map.put(i, new SimpleBean(i));
-//        }
-//        System.gc();
-//        for (long i = 2*count; i < 3*count; i++) {
-//          map.put(i, new SimpleBean(i));
-//        }
-//        System.gc();
-//        for (long i = 0; i < count; i = i + 50000) {
-//          System.out.println(map.get(i));
-//        }
-        System.out.println(map.get(count - 1));
-        System.out.println(map.longSize());
-      } finally {
-        assert map != null;
-        map.close();
-      }
+        Path file = getFile();
+        Files.deleteIfExists(file);
+        int entries = 30_000_000;
+        try (ChronicleMap<Long, SimpleBean> map = ChronicleMapBuilder
+                .of(Long.class, SimpleBean.class)
+                .valueSize(8 + 8 + 8 + 4)
+                .entries(entries)
+                .createPersistedTo(file.toFile())) {
+            long start = System.currentTimeMillis();
+            SimpleBean value = new SimpleBean();
+            for (long i = 0; i < entries; i += 2000000) {
+                System.out.printf("put %d keys%n", i);
+                for (long j = i; j < i + 2000000; j++) {
+                    value.setId(j);
+                    map.put(j, value);
+                }
+            }
+            long time = System.currentTimeMillis() - start;
+
+            for (long i = 0; i < entries; i = i + 1000000) {
+                System.out.println(map.get(i));
+            }
+            System.out.println(map.get(entries - 1L));
+            System.out.printf("Took %.1f second to write %,d entries%n", time / 1e3, map.longSize());
+        }
     }
 
     private static Path getFile() {
@@ -66,9 +60,9 @@ public class SimpleTest {
 //                        .keySize(10)
 //                        .create();
 
-      Path file = getFile();
+        Path file = getFile();
         ChronicleMapBuilder builder = ChronicleMapBuilder.of(Long.class, SimpleBean.class).
-            entries(1_000_000_000).entrySize(50);
+                entries(1_000_000_000).entrySize(50);
 
         ChronicleMap<Long, SimpleBean> map = builder.createPersistedTo(file.toFile());
 
