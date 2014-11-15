@@ -4,18 +4,22 @@ import my.beans.impl.SimpleBean;
 import net.openhft.chronicle.map.ChronicleMap;
 import net.openhft.chronicle.map.ChronicleMapBuilder;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
  * @author kkulagin
  * @since 09.11.2014
- *
+ * <p/>
  * On an i7-4770 with 8 GB and SSD running ubuntu 12.04 prints
- *
+ * <p/>
  * Took 24.3 second to write 30,000,000 entries
+ * <p/>
+ * On a Windows 7 laptop
+ * <p/>
+ * Took 27.0 second to write 30,000,000 entries
  */
 
 public class SimpleTest {
@@ -25,19 +29,21 @@ public class SimpleTest {
     }
 
     private static void option2() throws IOException {
-        Path file = getFile();
-        Files.deleteIfExists(file);
-        int entries = 30_000_000;
+        File file = File.createTempFile("testSample", ".deleteme");
+        file.deleteOnExit();
+//        int entries = 500_000, valueSize = 4000; // ok
+//        int entries = 550_000, valueSize = 4000; // fails on windows
+        int entries = 550_000, valueSize = 3700; // ok.
         try (ChronicleMap<Long, SimpleBean> map = ChronicleMapBuilder
                 .of(Long.class, SimpleBean.class)
-                .valueSize(8 + 8 + 8 + 4)
+                .valueSize(valueSize)
                 .entries(entries)
-                .createPersistedTo(file.toFile())) {
+                .createPersistedTo(file)) {
             long start = System.currentTimeMillis();
             SimpleBean value = new SimpleBean();
-            for (long i = 0; i < entries; i += 2000000) {
+            for (long i = 0; i < entries; i += 100000) {
                 System.out.printf("put %d keys%n", i);
-                for (long j = i; j < i + 2000000; j++) {
+                for (long j = i; j < i + 100000; j++) {
                     value.setId(j);
                     map.put(j, value);
                 }
