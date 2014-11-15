@@ -12,6 +12,10 @@ import java.nio.file.Paths;
 /**
  * @author kkulagin
  * @since 09.11.2014
+ *
+ * On an i7-4770 with 8 GB & SSD running ubuntu 12.04 prints
+ *
+ * Took 24.3 second to write 30,000,000 entries
  */
 
 public class SimpleTest {
